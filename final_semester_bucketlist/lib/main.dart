@@ -1,25 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'providers/bucket_list_provider.dart';
-import 'services/storage_service.dart';
-import 'screens/edit_bucket_list_screen.dart';
-import 'widgets/bucket_list_item_widget.dart';
-import 'widgets/celebration_overlay.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  final prefs = await SharedPreferences.getInstance();
-  
-  runApp(
-    ChangeNotifierProvider(
-      create: (_) => BucketListProvider(StorageService(prefs)),
-      child: const MyApp(),
-    ),
-  );
+void main() {
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -28,198 +11,141 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'My Bucketlist',
-      locale: const Locale('ko', 'KR'),
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('ko', 'KR'),
-        Locale('en', 'US'), // 폴백(fallback) 로케일
-      ],
+      title: '마지막 학기의 버킷리스트',
       theme: ThemeData(
-        useMaterial3: true,
         colorScheme: ColorScheme.light(
-          background: Colors.white,
-          surface: Colors.white,
-          primary: Color(0xFF4A90E2),    // 메인 컬러: 모던한 블루
-          secondary: Color(0xFF9B51E0),   // 서브 컬러: 세련된 퍼플
-          onPrimary: Colors.white,
-          onSecondary: Colors.white,
+          primary: const Color(0xFFA3CEF1), // 메인 컬러: 파스텔 블루
+          secondary: const Color(0xFF9ADBC5), // 포인트 컬러: 민트 그린
+          surface: const Color(0xFFFFF6E5), // 서브 컬러: 라이트 베이지
         ),
         textTheme: TextTheme(
           displayLarge: GoogleFonts.notoSans(
+            fontWeight: FontWeight.w600,
             fontSize: 24,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
-          ),
-          titleLarge: GoogleFonts.notoSans(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
             color: Colors.black87,
           ),
           bodyLarge: GoogleFonts.notoSans(
             fontSize: 16,
             color: Colors.black54,
           ),
-          bodyMedium: GoogleFonts.notoSans(
-            fontSize: 14,
-            color: Colors.black54,
-          ),
         ),
-        appBarTheme: AppBarTheme(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          centerTitle: true,
-          titleTextStyle: GoogleFonts.notoSans(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
-          ),
-          iconTheme: IconThemeData(color: Colors.black87),
-        ),
-        cardTheme: CardThemeData(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        ),
-        floatingActionButtonTheme: FloatingActionButtonThemeData(
-          backgroundColor: Color(0xFF4A90E2),
-          foregroundColor: Colors.white,
-          elevation: 4,
-        ),
+        useMaterial3: true,
       ),
       home: const HomePage(),
     );
   }
 }
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
-  void _showCelebration(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => CelebrationOverlay(
-        onAnimationComplete: () => Navigator.of(context).pop(),
-      ),
-    );
-  }
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  double progressValue = 0.45; // 진행률 예시값
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        title: Text('My Bucketlist'),
-        backgroundColor: Colors.white,
+        title: Text(
+          '마지막 학기의 버킷리스트',
+          style: Theme.of(context).textTheme.displayLarge,
+        ),
+        backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+        elevation: 0,
       ),
-      body: Consumer<BucketListProvider>(
-        builder: (context, provider, child) {
-          if (provider.items.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.list_alt,
-                    size: 64,
-                    color: Colors.grey[300],
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    '버킷리스트를 추가해보세요!',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Colors.grey[500],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-          return Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                color: Colors.white,
-                child: Column(
-                  children: [
-                    Text(
-                      '달성률',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 16),
-                    Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        SizedBox(
-                          height: 100,
-                          width: 100,
-                          child: CircularProgressIndicator(
-                            value: provider.progress,
-                            backgroundColor: Colors.grey[200],
-                            strokeWidth: 8,
-                          ),
-                        ),
-                        Text(
-                          '${(provider.progress * 100).toInt()}%',
-                          style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+      body: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                Text(
+                  '나의 버킷리스트 진행률',
+                  style: Theme.of(context).textTheme.bodyLarge,
                 ),
-              ),
-              Expanded(
-                child: ReorderableListView.builder(
-                  padding: EdgeInsets.only(top: 8),
-                  itemCount: provider.items.length,
-                  onReorder: provider.reorderItem,
-                  itemBuilder: (context, index) {
-                    final item = provider.items[index];
-                    return BucketListItemWidget(
-                      key: ValueKey(item.id),
-                      item: item,
-                      onToggle: () {
-                        final wasCompleted = item.isCompleted;
-                        provider.toggleComplete(item.id);
-                        if (!wasCompleted) {
-                          _showCelebration(context);
-                        }
-                      },
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => EditBucketListScreen(item: item),
-                          ),
-                        );
-                      },
-                    );
-                  },
+                const SizedBox(height: 10),
+                CircularProgressIndicator(
+                  value: progressValue,
+                  backgroundColor: Colors.grey.withOpacity(0.2),
+                  color: Theme.of(context).colorScheme.primary,
                 ),
-              ),
-            ],
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const EditBucketListScreen(),
+                Text(
+                  '${(progressValue * 100).toInt()}%',
+                  style: Theme.of(context).textTheme.displayLarge,
+                ),
+              ],
             ),
-          );
-        },
-        child: const Icon(Icons.add),
+          ),
+          Expanded(
+            child: GridView.count(
+              padding: const EdgeInsets.all(20),
+              crossAxisCount: 2,
+              mainAxisSpacing: 20,
+              crossAxisSpacing: 20,
+              children: [
+                _buildMenuCard(
+                  context,
+                  '나의 버킷리스트',
+                  Icons.list_alt_rounded,
+                  () {},
+                ),
+               
+                _buildMenuCard(
+                  context,
+                  '목표 추가하기',
+                  Icons.add_circle_outline_rounded,
+                  () {},
+                ),
+                _buildMenuCard(
+                  context,
+                  '달성 현황',
+                  Icons.emoji_events_rounded,
+                  () {},
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuCard(
+    BuildContext context,
+    String title,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 48,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.bodyLarge,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
