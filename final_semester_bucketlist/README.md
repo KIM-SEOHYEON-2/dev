@@ -1,4 +1,4 @@
-# final_semester_bucketlist
+# bucketlist
 
 A new Flutter project.
 
